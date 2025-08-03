@@ -1,0 +1,121 @@
+@page "/"
+@using MusicSearchDownload.Models
+@inject IJSRuntime JSRuntime
+@inject MusicSearchDownload.Services.ISearchService service
+
+
+<div class="main">
+    <div class="top-row">
+        <div>
+            <div>
+                <input id="myInput" type="text" placeholder="search text" @bind="Keyword" maxlength="150" required>
+                <button id="myDoSearch" type="button" @onclick="DoSearch"
+                    disabled="@string.IsNullOrWhiteSpace(Keyword)">Search</button>
+                <button type="button" @onclick="@(() => DoDownload(SelectedTrack))" disabled="@IsDownloading"
+                    style="@DisplayNone()">Download</button>
+            </div>
+            <div style="@DisplayNone()"><b>@SelectedTrack?.Artist :</b> "@SelectedTrack?.Title"</div>
+            <div style="@DisplayNone()"><audio controls src="@GetPlayUrl(SelectedTrack?.Id)"></audio></div>
+        </div>
+    </div>
+    <script>
+        var myInput = document.getElementById("myInput");
+        myInput.addEventListener("keyup", function (event) {
+            if (event.keyCode === 13 && myInput.value.trim() !== "") {
+                event.preventDefault();
+                document.getElementById("myDoSearch").click();
+            }
+        });
+        function playStop() {
+            var audio = document.querySelector('audio');
+            if (audio) {
+                audio.pause();
+            }
+        }
+    </script>
+    <div class="content">
+        @if (tracks.Count() > 0)
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Artist</th>
+                        <th>Title</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var track in tracks)
+                    {
+                        <tr @onclick="@(() => SelectTrack(track))" style="cursor: pointer;@RowBackgroundColor(track)">
+                            <td>@track.Artist</td>
+                            <td>@track.Title</td>
+                            <td>@track.DisplayDuration</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<Track> tracks;
+    private bool IsDownloading { get; set; } = false;
+    private bool IsBool { get; set; } = false;
+    private string Keyword { get; set; }
+    private Track SelectedTrack { get; set; }
+    private bool IsSelected(Track track) => track.Id == SelectedTrack?.Id;
+    private string DisplayNone() => $"{(SelectedTrack == null ? "display: none;" : "")}";
+    private string RowBackgroundColor(Track track) => IsSelected(track) ? "background-color: silver" : "";
+    private async Task SelectTrack(Track track)
+    {
+        SelectedTrack = track;
+        if (SelectedTrack != null)
+        {
+            await JSRuntime.InvokeVoidAsync("playStop");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        tracks = new List<Track>();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task DoSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            tracks = await service.Search(Keyword);
+        }
+    }
+
+    private async Task DoDownload(Track track)
+    {
+        IsDownloading = true;
+        var url = await GetDownloadUrl(track);
+        await service.Download(url);
+        IsDownloading = false;
+    }
+
+    private async Task<string> GetDownloadUrl(Track track)
+    {
+        if (string.IsNullOrWhiteSpace(track.DownloadUrl))
+        {
+            track.DownloadUrl = await service.DownloadUrl(track.Id);
+        }
+
+        return track.DownloadUrl;
+    }
+
+    private string GetDownloadUrl(int? trackId)
+    {
+        return trackId.HasValue ? $"https://m.z3.fm/download/{trackId}" : "";
+    }
+
+    private string GetPlayUrl(int? trackId)
+    {
+        return trackId.HasValue ? $"http://127.0.0.1:9000/track/{trackId}" : "";
+    }
+}
