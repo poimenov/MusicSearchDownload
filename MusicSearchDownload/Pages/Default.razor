@@ -1,8 +1,9 @@
 @page "/"
+@using Microsoft.Extensions.Configuration;
 @using MusicSearchDownload.Models
 @inject IJSRuntime JSRuntime
+@inject IConfiguration config
 @inject MusicSearchDownload.Services.ISearchService service
-
 
 <div class="main">
     <div class="top-row">
@@ -60,6 +61,7 @@
 </div>
 
 @code {
+    private int port { get; set; } = 9000;
     private IEnumerable<Track> tracks;
     private bool IsDownloading { get; set; } = false;
     private bool IsBool { get; set; } = false;
@@ -80,6 +82,11 @@
     protected override async Task OnInitializedAsync()
     {
         tracks = new List<Track>();
+        var _port = config.GetValue("Port", port);
+        if ((_port > 0 && _port < 65535 && _port != port))
+        {
+            port = _port;
+        }
         await base.OnInitializedAsync();
     }
 
@@ -116,6 +123,6 @@
 
     private string GetPlayUrl(int? trackId)
     {
-        return trackId.HasValue ? $"http://127.0.0.1:9000/track/{trackId}" : "";
+        return trackId.HasValue ? $"http://127.0.0.1:{port}/track/{trackId}" : "";
     }
 }
