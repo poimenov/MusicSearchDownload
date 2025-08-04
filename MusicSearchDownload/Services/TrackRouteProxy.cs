@@ -12,6 +12,7 @@ public class TrackRouteProxy : ITrackRouteProxy
     private const string DOWNLOAD_URL = "https://m.z3.fm/download";
     private const string DEFAULT_HOST = "127.0.0.1";
     private const int DEFAULT_PORT = 9000;
+    private bool disposed = false;
     private HttpClient _httpClient;
     private WebserverBase _server;
 
@@ -66,6 +67,25 @@ public class TrackRouteProxy : ITrackRouteProxy
 
     public void Dispose()
     {
-        _httpClient.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+        else
+        {
+            if (disposing)
+            {
+                _httpClient.Dispose();
+                _server.Dispose();
+            }
+
+            disposed = true;
+        }
     }
 }
