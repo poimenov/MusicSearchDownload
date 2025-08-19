@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,7 @@ namespace MusicSearchDownload
             // customize window
             app.MainWindow
                 .SetIconFile("favicon.ico")
+                .SetSize(new Size(800, 600))
                 .SetTitle("Music search and download");
             app.MainWindow.RegisterWindowClosingHandler((sender, args) =>
             {
