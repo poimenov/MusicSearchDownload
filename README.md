@@ -7,7 +7,7 @@ Desktop application for searching, listening and downloading music from the site
 
 ### Prerequisites
 
-.Net 8.0 SDK 
+.Net 10.0 SDK 
 
 ### Installation
 
